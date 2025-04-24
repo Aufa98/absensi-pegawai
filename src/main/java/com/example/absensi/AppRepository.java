@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,10 +87,11 @@ public class AppRepository {
     }
 
     public int saveAbsensi(Absensi absensi) {
+        LocalDate hariIni = LocalDate.now();
         String sql = "INSERT INTO absensi(pegawai_id, tanggal, hadir) VALUES (?, ?, ?)";
         try {
             return jdbcTemplate.update(sql, absensi.getPegawaiId(), 
-        absensi.getTanggal(), absensi.isHadir());
+        hariIni, absensi.isHadir());
         } catch (Exception e) {
             throw new RuntimeException("Gagal menyimpan data absensi: " + e.getMessage());
         } 
@@ -115,25 +117,24 @@ public class AppRepository {
     }
 
     public Map<String, Object> getRekapAbsensi(int pegawaiId) {
+        String sql = "SELECT * FROM absensi WHERE pegawai_id = ?";
         try {
-        Map<String, Object> result = new HashMap<>();
-        Integer total = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM absensi WHERE pegawai_id = ?", Integer.class, pegawaiId);
-        Integer hadir = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM absensi WHERE pegawai_id = ? AND hadir = true", Integer.class, pegawaiId);
-        Integer tidakHadir = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM absensi WHERE pegawai_id = ? AND hadir = false", Integer.class, pegawaiId);
-        
-        if (total != 0 && hadir != 0 && tidakHadir != 0) {
-            result.put("pegawai_id", pegawaiId);
-            result.put("total_absensi", total);
-            result.put("hadir", hadir);
-            result.put("tidak_hadir", tidakHadir);
-        }
+            List<Absensi> absensiList = jdbcTemplate.query(sql, new absensiMapper(), pegawaiId);
 
-        return result;
-    } catch (DataAccessException e) {
-        throw new RuntimeException("Gagal mengambil rekap absensi: " + e.getMessage());
-    }
+            long total = absensiList.size();
+            long hadir = absensiList.stream().filter(Absensi::isHadir).count();
+            long tidakHadir = absensiList.stream().filter(a -> !a.isHadir()).count();
+            Map<String, Object> result = new HashMap<>();
+
+            if (total != 0) {
+                result.put("pegawai_id", pegawaiId);
+                result.put("total_absensi", total);
+                result.put("hadir", hadir);
+                result.put("tidak_hadir", tidakHadir);
+            } 
+            return result;
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Gagal mengambil rekap absensi: " + e.getMessage());
+        }
     }
 }
