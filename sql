@@ -18,9 +18,9 @@ CREATE TABLE absensi (
 
 -- Tambah data dummy pegawai
 INSERT INTO pegawai(nama, jabatan) VALUES
-('Dewi Lestari', 'HRD'),
-('Fahmi Saputra', 'Programmer'),
-('Intan Rahma', 'Admin');
+('Jack Doe', 'HRD'),
+('John Doe', 'Programmer'),
+('Jane Doe', 'Admin');
 
 -- Tambah data dummy absensi
 INSERT INTO absensi(pegawai_id, tanggal, hadir) VALUES
